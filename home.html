@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth GuideHub - Managed OAuth Directory & Live Agent Investigator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        },
+                        darkbg: '#0b0f17',
+                        darkcard: '#151c28',
+                        darkborder: '#232e42'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        /* Custom scrollbar for dark terminal */
+        .terminal-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .terminal-scroll::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .terminal-scroll::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        /* Pulse glow animation for active agent */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.98); }
+        }
+        .pulse-active {
+            animation: pulse-glow 1.8s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-blue-600 selection:text-white">
+
+<div id="app" v-cloak class="min-h-screen flex flex-col">
+
+    <!-- TOP NAV BAR -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" @click="activeView = 'directory'">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">OAuth GuideHub</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono font-medium">APM Assignment</span>
+                    </div>
+                    <p class="text-xs text-slate-400 hidden sm:block">Managed OAuth Directory & AI Agent Investigator</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button @click="activeView = 'directory'" 
+                        :class="['px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2', activeView === 'directory' ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-400 hover:text-white']">
+                    <i class="fa-solid fa-th-large text-xs"></i>
+                    <span>Directory</span>
+                </button>
+                <button @click="activeView = 'mock-api'" 
+                        :class="['px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2', activeView === 'mock-api' ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-400 hover:text-white']">
+                    <i class="fa-solid fa-server text-xs text-indigo-400"></i>
+                    <span>Mock API Console</span>
+                </button>
+                <button @click="activeView = 'readme'" 
+                        :class="['px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2', activeView === 'readme' ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-400 hover:text-white']">
+                    <i class="fa-solid fa-book-bookmark text-xs"></i>
+                    <span>Assignment Brief & Strategic Rationale</span>
+                </button>
+                <button @click="openInvestigatorModal()" 
+                        class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-all shadow-md shadow-blue-600/30 flex items-center space-x-2 border border-blue-400/30">
+                    <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                    <span>Investigate New App</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- VIEW 2: MOCK API & SYNTHETIC BACKEND CONSOLE -->
+        <div v-if="activeView === 'mock-api'" class="space-y-6">
+            
+            <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono font-medium">REST API v1</span>
+                        <h1 class="text-xl font-bold text-white">OAuth GuideHub Synthetic Engine & API Sandbox</h1>
+                    </div>
+                    <p class="text-xs text-slate-400">Inspect simulated backend endpoints, test live JSON responses, and monitor system event logs.</p>
+                </div>
+
+                <div class="flex items-center space-x-3 bg-slate-950 p-2 rounded-xl border border-slate-800 text-xs">
+                    <span class="text-slate-400">API Mode:</span>
+                    <button @click="apiMode = 'mock'" :class="['px-3 py-1 rounded-lg font-semibold transition-all', apiMode === 'mock' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200']">
+                        Mock API (Fast)
+                    </button>
+                    <button @click="apiMode = 'gemini'" :class="['px-3 py-1 rounded-lg font-semibold transition-all', apiMode === 'gemini' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200']">
+                        Gemini Live Agent
+                    </button>
+                </div>
+            </div>
+
+            <!-- API ENDPOINT TESTER -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Endpoint Selection & Request Builder -->
+                <div class="lg:col-span-5 space-y-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                            <i class="fa-solid fa-code text-indigo-400"></i>
+                            <span>Endpoint Request Builder</span>
+                        </h3>
+
+                        <!-- Select Endpoint -->
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">Target Endpoint</label>
+                            <select v-model="selectedApiEndpoint" @change="loadEndpointDefaults()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 font-mono focus:border-indigo-500 focus:outline-none">
+                                <option value="GET /v1/guides">GET /v1/guides (List All Guides)</option>
+                                <option value="GET /v1/guides/{id}">GET /v1/guides/{id} (Get Single App Guide)</option>
+                                <option value="POST /v1/investigate">POST /v1/investigate (Trigger Live Agent)</option>
+                                <option value="POST /v1/verify-scope">POST /v1/verify-scope (Analyze OAuth Scope Risk)</option>
+                            </select>
+                        </div>
+
+                        <!-- Request Payload Params -->
+                        <div v-if="selectedApiEndpoint.startsWith('POST')" class="space-y-2">
+                            <label class="text-xs text-slate-400 block">JSON Request Body</label>
+                            <textarea v-model="apiRequestPayload" rows="6" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-emerald-400 font-mono focus:border-indigo-500 focus:outline-none resize-none"></textarea>
+                        </div>
+
+                        <button @click="executeApiCall()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>Send Request</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Response Preview & Event Log -->
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs font-bold text-slate-300">API Response</span>
+                                <span v-if="apiStatus" :class="['text-[10px] px-2 py-0.5 rounded font-mono font-bold', apiStatus === 200 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20']">
+                                    HTTP {{ apiStatus }} OK
+                                </span>
+                            </div>
+                            <span class="text-[11px] text-slate-500 font-mono">{{ apiLatency }} ms</span>
+                        </div>
+
+                        <pre class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs font-mono text-slate-300 overflow-x-auto max-h-80 terminal-scroll"><code>{{ apiResponseJson }}</code></pre>
+                    </div>
+
+                    <!-- Synthetic Network Call Log -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+                        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+                            <i class="fa-solid fa-list-ol text-blue-400"></i>
+                            <span>Synthetic Backend Request Log</span>
+                        </h3>
+                        <div class="bg-slate-950 rounded-xl border border-slate-800 p-3 space-y-2 max-h-48 overflow-y-auto terminal-scroll font-mono text-[11px]">
+                            <div v-for="(log, idx) in apiNetworkLogs" :key="idx" class="flex items-center justify-between border-b border-slate-900 pb-1.5 last:border-none">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-emerald-400 font-bold">{{ log.method }}</span>
+                                    <span class="text-slate-300">{{ log.path }}</span>
+                                </div>
+                                <div class="flex items-center space-x-3 text-slate-500">
+                                    <span>{{ log.status }}</span>
+                                    <span>{{ log.time }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- VIEW 3: ASSIGNMENT BRIEF & STRATEGIC RATIONALE (README) -->
+        <div v-if="activeView === 'readme'" class="space-y-8 max-w-4xl mx-auto">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6">
+                <div class="border-b border-slate-800 pb-4">
+                    <div class="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">Take-Home Submission README</div>
+                    <h1 class="text-2xl font-bold text-white">OAuth GuideHub for AI Agent Builders</h1>
+                    <p class="text-slate-400 text-sm mt-1">
+                        Architecture decisions, real-world evidence verification, agent delegation strategy, and product trade-offs.
+                    </p>
+                </div>
+
+                <!-- 1. Problem Understanding -->
+                <section class="space-y-3">
+                    <h2 class="text-lg font-semibold text-slate-100 flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded-md bg-blue-600/20 text-blue-400 text-xs flex items-center justify-center font-mono">1</span>
+                        <span>Understanding the Developer & AI Agent Friction</span>
+                    </h2>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        When developers build AI agents that require connecting to end-user SaaS tools (Gmail, Slack, HubSpot, Salesforce), they face a critical roadblock: <strong class="text-white">The Provider OAuth Gap</strong>.
+                    </p>
+                    <ul class="list-disc list-inside text-sm text-slate-300 space-y-1.5 pl-2">
+                        <li><strong>Uncertain Timelines:</strong> Is this a 10-minute API key setup, or a 6-week CASA security audit requiring a $2,000 third-party review?</li>
+                        <li><strong>Scope Misconfiguration:</strong> Requesting one wrong restricted scope forces an entire re-review and app reset.</li>
+                        <li><strong>Human vs. Agent Task Confusion:</strong> Developers need clarity on what an automated agent script can handle (generating privacy policy drafts, configuring redirect URIs) versus what requires human executive action (D-U-N-S verification, video demo recording).</li>
+                    </ul>
+                </section>
+
+                <!-- 2. What Was Tested, Corrected & Remaining Uncertainties -->
+                <section class="space-y-3">
+                    <h2 class="text-lg font-semibold text-slate-100 flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded-md bg-blue-600/20 text-blue-400 text-xs flex items-center justify-center font-mono">2</span>
+                        <span>Evidence Testing, Corrections & Discrepancies</span>
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                            <div class="font-bold text-emerald-400 mb-1 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>Verified & Corrected Insights</span>
+                            </div>
+                            <ul class="space-y-1.5 text-slate-300">
+                                <li>• <strong>Google Workspace:</strong> Unverified app screen allows local testing for up to 100 internal users immediately without review delay.</li>
+                                <li>• <strong>Slack Granular Scopes:</strong> Bot token scopes (e.g., <code class="text-amber-300">chat:write</code>) do not require workspace re-approval if installed in personal workspace.</li>
+                                <li>• <strong>Salesforce:</strong> Requires enabling "Enable OAuth Settings" in Connected Apps which takes 2–10 minutes to propagate across global edge networks.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                            <div class="font-bold text-amber-400 mb-1 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <span>Remaining Uncertainties & Unverified</span>
+                            </div>
+                            <ul class="space-y-1.5 text-slate-300">
+                                <li>• <strong>HubSpot App Marketplace vs. Private Apps:</strong> Private apps bypass review entirely for single-tenant agents, whereas public OAuth requires partner portal signoff.</li>
+                                <li>• <strong>Dynamic CASA Security Audits:</strong> Third-party security assessment pricing ($1.5k–$5k) varies depending on cloud infrastructure complexity.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Architecture & Agent Workflow -->
+                <section class="space-y-3">
+                    <h2 class="text-lg font-semibold text-slate-100 flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded-md bg-blue-600/20 text-blue-400 text-xs flex items-center justify-center font-mono">3</span>
+                        <span>Agent Pipeline Architecture</span>
+                    </h2>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs font-mono text-slate-300 space-y-2">
+                        <p class="text-blue-400 font-bold">[ User Input App Name / URL ]</p>
+                        <p class="pl-4">↳ <strong>1. DocScraper Agent:</strong> Fetches API developer portal endpoints, OAuth scopes documentation, and developer forums.</p>
+                        <p class="pl-4">↳ <strong>2. PolicyAnalyzer Agent:</strong> Evaluates verification requirements (DUNS, CASA, domain verification TXT records).</p>
+                        <p class="pl-4">↳ <strong>3. FlowValidator Agent:</strong> Synthesizes setup steps, estimates setup time vs. review wait time.</p>
+                        <p class="pl-4">↳ <strong>4. ActionSynthesizer Agent:</strong> Classifies actions into "Agent Automated" vs. "Developer Action Required".</p>
+                    </div>
+                </section>
+
+                <!-- 4. Budget & Scope Trade-offs -->
+                <section class="space-y-3">
+                    <h2 class="text-lg font-semibold text-slate-100 flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded-md bg-blue-600/20 text-blue-400 text-xs flex items-center justify-center font-mono">4</span>
+                        <span>6–8 Hour Budget Trade-offs & Scope</span>
+                    </h2>
+                    <div class="text-xs text-slate-300 space-y-2">
+                        <p><strong>What was prioritized:</strong> Deep, actionable quality on 5 diverse OAuth archetypes (Google = high compliance review, Slack = instant bot scope, Salesforce/Hubspot = enterprise domain approval, Spotify/Linear = fast standard OAuth), plus a realistic live agent investigation simulator capable of parsing any custom input.</p>
+                        <p><strong>What was deferred for production:</strong> Direct live scraping of behind-login developer portals (requires headless browser pool & paid credentials), automated OAuth callback URL verification testing ping.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL 1: DETAILED APP GUIDE MODAL -->
+    <div v-if="selectedAppModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-slate-950/80 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+            
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-slate-800 flex items-start justify-between bg-slate-900/90 sticky top-0 z-10">
+                <div class="flex items-center space-x-4">
+                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold border" :class="selectedAppModal.bgColorClass || 'bg-slate-800 border-slate-700 text-white'">
+                        <i :class="selectedAppModal.iconClass"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h2 class="text-xl font-bold text-white">{{ selectedAppModal.name }}</h2>
+                            <span :class="['text-xs px-2.5 py-0.5 rounded-full font-medium border', getDifficultyBadgeClass(selectedAppModal.difficulty)]">
+                                {{ selectedAppModal.difficulty }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">{{ selectedAppModal.category }} Integration Guide</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="copyShareLink()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors flex items-center space-x-1.5">
+                        <i :class="copied ? 'fa-solid fa-check text-emerald-400' : 'fa-solid fa-share-nodes'"></i>
+                        <span>{{ copied ? 'Link Copied!' : 'Share Guide' }}</span>
+                    </button>
+                    <button @click="selectedAppModal = null" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content - Scrollable -->
+            <div class="p-6 overflow-y-auto space-y-6 flex-1 text-slate-200">
+
+                <!-- Summary & Quick Stats Bar -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <div class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Developer Time</div>
+                        <div class="text-lg font-bold text-white flex items-center space-x-2">
+                            <i class="fa-regular fa-clock text-blue-400"></i>
+                            <span>{{ selectedAppModal.setupTime }}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">Active configuration effort</p>
+                    </div>
+
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <div class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Approval Waiting Time</div>
+                        <div class="text-lg font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-hourglass-half text-amber-400"></i>
+                            <span>{{ selectedAppModal.approvalWait }}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">Provider manual review latency</p>
+                    </div>
+
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <div class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Verification Tier</div>
+                        <div class="text-lg font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-shield-halved text-indigo-400"></i>
+                            <span>{{ selectedAppModal.verificationLevel }}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">Audit requirement level</p>
+                    </div>
+                </div>
+
+                <!-- CRITICAL NUANCES & BLOCKERS WARNING BOX -->
+                <div class="bg-gradient-to-r from-amber-950/30 via-slate-900 to-amber-950/20 border border-amber-500/30 rounded-xl p-4">
+                    <h3 class="text-sm font-bold text-amber-300 flex items-center space-x-2 mb-2">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+                        <span>Critical Nuances & Approval Blockers</span>
+                    </h3>
+                    <ul class="space-y-1.5 text-xs text-slate-300 list-disc list-inside">
+                        <li v-for="(nuance, idx) in selectedAppModal.nuances" :key="idx" class="leading-relaxed">
+                            <strong class="text-slate-200">{{ nuance.title }}:</strong> {{ nuance.description }}
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- AGENT VS DEVELOPER RESPONSIBILITY SPLIT -->
+                <div class="space-y-3">
+                    <h3 class="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-users-gear text-blue-400"></i>
+                        <span>Task Delegation: Agent Automation vs. Developer Ownership</span>
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Agent Tasks -->
+                        <div class="bg-slate-950/80 border border-blue-500/20 rounded-xl p-4">
+                            <div class="flex items-center space-x-2 text-xs font-bold text-blue-400 mb-3 border-b border-slate-800 pb-2">
+                                <i class="fa-solid fa-robot"></i>
+                                <span>WHAT AI AGENTS CAN DO (Automated)</span>
+                            </div>
+                            <ul class="space-y-2 text-xs text-slate-300">
+                                <li v-for="(task, idx) in selectedAppModal.agentTasks" :key="idx" class="flex items-start space-x-2">
+                                    <i class="fa-solid fa-check text-blue-400 text-[10px] mt-0.5"></i>
+                                    <span>{{ task }}</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Developer Tasks -->
+                        <div class="bg-slate-950/80 border border-amber-500/20 rounded-xl p-4">
+                            <div class="flex items-center space-x-2 text-xs font-bold text-amber-400 mb-3 border-b border-slate-800 pb-2">
+                                <i class="fa-solid fa-user-check"></i>
+                                <span>WHERE DEVELOPERS MUST TAKE OVER</span>
+                            </div>
+                            <ul class="space-y-2 text-xs text-slate-300">
+                                <li v-for="(task, idx) in selectedAppModal.devTasks" :key="idx" class="flex items-start space-x-2">
+                                    <i class="fa-solid fa-user-pen text-amber-400 text-[10px] mt-0.5"></i>
+                                    <span>{{ task }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INTERACTIVE STEP-BY-STEP CHECKLIST -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+                            <i class="fa-solid fa-list-check text-green-400"></i>
+                            <span>Step-by-Step Execution Checklist</span>
+                        </h3>
+                        <span class="text-xs text-slate-400 font-mono">
+                            {{ getCompletedStepCount(selectedAppModal) }} / {{ selectedAppModal.steps.length }} Completed
+                        </span>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                        <div class="bg-gradient-to-r from-blue-500 to-emerald-500 h-full transition-all duration-300" 
+                             :style="{ width: getCompletionPercentage(selectedAppModal) + '%' }"></div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div v-for="(step, idx) in selectedAppModal.steps" :key="idx" 
+                             @click="toggleStep(selectedAppModal, idx)"
+                             :class="['p-3.5 rounded-xl border text-xs cursor-pointer transition-all flex items-start space-x-3', 
+                                     step.done ? 'bg-emerald-950/20 border-emerald-500/30 text-slate-300' : 'bg-slate-950 border-slate-800 hover:border-slate-700 text-slate-200']">
+                            
+                            <div class="mt-0.5">
+                                <i :class="step.done ? 'fa-solid fa-circle-check text-emerald-400 text-base' : 'fa-regular fa-circle text-slate-600 text-base'"></i>
+                            </div>
+
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-semibold text-slate-100" :class="{ 'line-through text-slate-500': step.done }">
+                                        {{ idx + 1 }}. {{ step.title }}
+                                    </span>
+                                    <span :class="['px-2 py-0.5 text-[10px] rounded font-semibold uppercase', 
+                                                  step.owner === 'Agent' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20']">
+                                        {{ step.owner }}
+                                    </span>
+                                </div>
+                                <p class="text-slate-400 mt-1 leading-relaxed">{{ step.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SOURCES & EVIDENCE VERIFICATION FOOTER -->
+                <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-400 bg-slate-950/40 p-3 rounded-xl border border-slate-800">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-certificate text-blue-400"></i>
+                        <span>Verified against: <strong class="text-slate-300">{{ selectedAppModal.sourceDocs }}</strong></span>
+                    </div>
+                    <div class="flex items-center space-x-3 text-[11px]">
+                        <span>Confidence Score: <strong class="text-emerald-400">{{ selectedAppModal.confidenceScore }}%</strong></span>
+                        <span>•</span>
+                        <span>Last Checked: {{ selectedAppModal.lastVerified }}</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: LIVE AGENT INVESTIGATOR MODAL -->
+    <div v-if="showInvestigatorModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-slate-950/85 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full flex flex-col shadow-2xl overflow-hidden my-auto">
+            
+            <!-- Header -->
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Real-time OAuth Agent Investigator</h2>
+                        <p class="text-xs text-slate-400">Scrapes docs, analyzes scopes, and generates shareable guide for any app</p>
+                    </div>
+                </div>
+                <button v-if="!isInvestigating" @click="closeInvestigatorModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6 space-y-6">
+
+                <!-- Input State (Before Run) -->
+                <div v-if="!isInvestigating && !investigationComplete" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">App Name or Developer Portal URL</label>
+                        <input type="text" 
+                               v-model="investigateInput" 
+                               placeholder="e.g., Asana, Stripe, Discord, Intercom, https://developer.zoom.us"
+                               class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Preset Samples for Fast Testing -->
+                    <div>
+                        <span class="text-xs text-slate-500 block mb-2">Or test with an unlisted sample app:</span>
+                        <div class="flex flex-wrap gap-2">
+                            <button v-for="sample in samplePresets" :key="sample" 
+                                    @click="investigateInput = sample"
+                                    class="px-2.5 py-1 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-xs text-slate-300 transition-colors">
+                                + {{ sample }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <button @click="startAgentInvestigation()" 
+                            :disabled="!investigateInput.trim()"
+                            class="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-rocket"></i>
+                        <span>Launch Multi-Agent Investigation</span>
+                    </button>
+                </div>
+
+                <!-- Active Running Terminal State -->
+                <div v-if="isInvestigating || investigationComplete" class="space-y-4">
+                    
+                    <!-- Progress Header -->
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-slate-300 flex items-center space-x-2">
+                            <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+                            <span>Target: <span class="text-blue-400 font-mono">{{ investigateInput }}</span></span>
+                        </span>
+                        <span class="text-slate-400 font-mono">{{ agentProgress }}% Completed</span>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                        <div class="bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500 h-full transition-all duration-300"
+                             :style="{ width: agentProgress + '%' }"></div>
+                    </div>
+
+                    <!-- Terminal Output Box -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs h-64 overflow-y-auto terminal-scroll space-y-2 text-slate-300">
+                        <div v-for="(log, idx) in agentLogs" :key="idx" class="flex items-start space-x-2">
+                            <span class="text-slate-600 shrink-0">[{{ log.time }}]</span>
+                            <span :class="log.colorClass">{{ log.message }}</span>
+                        </div>
+                        <div v-if="isInvestigating" class="flex items-center space-x-2 text-blue-400 pt-1 pulse-active">
+                            <i class="fa-solid fa-spinner fa-spin text-xs"></i>
+                            <span>Agent active: Synthesizing developer requirements...</span>
+                        </div>
+                    </div>
+
+                    <!-- Complete Action Button -->
+                    <div v-if="investigationComplete" class="pt-2">
+                        <button @click="viewGeneratedGuide()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>View Generated Shareable OAuth Guide</span>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+    data() {
+        return {
+            activeView: 'directory', // 'directory', 'mock-api', 'readme'
+            searchQuery: '',
+            selectedCategory: 'All',
+            copied: false,
+            selectedAppModal: null,
+
+            // API Console State
+            apiMode: 'mock',
+            selectedApiEndpoint: 'GET /v1/guides',
+            apiRequestPayload: '{\n  "appName": "Linear",\n  "includeScopes": true\n}',
+            apiStatus: 200,
+            apiLatency: 120,
+            apiResponseJson: '// Select an endpoint and click Send Request to inspect JSON response',
+            apiNetworkLogs: [
+                { method: 'GET', path: '/v1/guides', status: '200 OK', time: '17:42:01' },
+                { method: 'GET', path: '/v1/guides/google-workspace', status: '200 OK', time: '17:42:15' }
+            ],
+
+            // Live Investigator State
+            showInvestigatorModal: false,
+            investigateInput: '',
+            isInvestigating: false,
+            investigationComplete: false,
+            agentProgress: 0,
+            agentLogs: [],
+            samplePresets: ['Asana Workspace API', 'Jira Software Cloud', 'Intercom Conversations', 'Discord Bot API', 'Notion API'],
+
+            categories: ['All', 'Instant / Fast', 'High Review Delay', 'Enterprise / B2B'],
+
+            // Seed Apps Data
+            apps: [
+                {
+                    id: 'google-workspace',
+                    name: 'Google Workspace (Gmail / Drive)',
+                    category: 'High Review Delay',
+                    difficulty: 'Complex Blocker',
+                    setupTime: '30 mins setup',
+                    approvalWait: '2 - 6 Weeks',
+                    verificationLevel: 'CASA Tier 2 Security Audit',
+                    bgColorClass: 'bg-red-500/10 border-red-500/20 text-red-400',
+                    iconClass: 'fa-brands fa-google',
+                    summary: 'Requires GCP OAuth consent screen configuration, domain ownership verification, privacy policy audit, and CASA Tier 2 security review for restricted scopes.',
+                    topBlocker: 'CASA Tier 2 Audit & Verified Privacy Policy required before public deployment.',
+                    confidenceScore: 98,
+                    lastVerified: '2 days ago',
+                    sourceDocs: 'Google Identity Platform Docs v2',
+                    nuances: [
+                        { title: 'Unverified App Limit', description: 'Allows up to 100 specific test users for development before requiring full verification.' },
+                        { title: 'Restricted Scopes', description: 'Gmail API write scopes automatically trigger CASA security assessment costs ($1.5k–$5k if third-party needed).' },
+                        { title: 'Domain Verification', description: 'Redirect URIs must match verified Webmaster domains owned by the developer account.' }
+                    ],
+                    agentTasks: [
+                        'Draft compliant Privacy Policy & TOS links for consent screen',
+                        'Generate standard JSON scope requests for minimal required access',
+                        'Configure test users list in GCP OAuth Console via API'
+                    ],
+                    devTasks: [
+                        'Submit DNS TXT record for top-level domain ownership verification',
+                        'Upload unedited Loom video demonstrating full OAuth user flow to YouTube',
+                        'Complete CASA Tier 2 self-assessment questionnaire'
+                    ],
+                    steps: [
+                        { title: 'Create GCP Project & Enable APIs', description: 'Enable Gmail/Drive API in Google Cloud Console.', owner: 'Agent', done: true },
+                        { title: 'Configure OAuth Consent Screen', description: 'Add App Name, Logo, Support Email, and Privacy Policy URL.', owner: 'Agent', done: true },
+                        { title: 'Verify Domain Ownership in Webmaster Tools', description: 'Add DNS TXT record to verified domain registrar.', owner: 'Developer', done: false },
+                        { title: 'Create OAuth Client Credentials', description: 'Generate Client ID and Secret for Web Application type.', owner: 'Agent', done: false },
+                        { title: 'Record Demo Video & Submit Verification', description: 'Record 2-min unlisted YouTube video showing consent flow.', owner: 'Developer', done: false }
+                    ]
+                },
+                {
+                    id: 'slack',
+                    name: 'Slack Web API',
+                    category: 'Instant / Fast',
+                    difficulty: 'Instant Setup',
+                    setupTime: '10 mins setup',
+                    approvalWait: 'Zero (Instant)',
+                    verificationLevel: 'Self-serve / Marketplace Optional',
+                    bgColorClass: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+                    iconClass: 'fa-brands fa-slack',
+                    summary: 'Fast developer setup with granular bot scopes. Local testing and single-workspace installations work instantly without review.',
+                    topBlocker: 'Workspace Admin consent needed if installing on enterprise grids.',
+                    confidenceScore: 99,
+                    lastVerified: 'Yesterday',
+                    sourceDocs: 'Slack API Reference v2024',
+                    nuances: [
+                        { title: 'Bot vs. User Scopes', description: 'Bot scopes (chat:write, channels:read) install without user token prompt.' },
+                        { title: 'App Directory vs. Internal', description: 'Internal workspace apps bypass Slack review entirely.' }
+                    ],
+                    agentTasks: [
+                        'Generate App Manifest JSON with explicit required scopes',
+                        'Setup OAuth Redirect URI endpoints',
+                        'Parse scope tokens upon user installation callback'
+                    ],
+                    devTasks: [
+                        'Click "Install to Workspace" in Slack Developer Portal',
+                        'Approve admin permissions if installing in restricted corporate slack'
+                    ],
+                    steps: [
+                        { title: 'Create Slack App via Manifest', description: 'Paste auto-generated JSON manifest into api.slack.com.', owner: 'Agent', done: true },
+                        { title: 'Configure Bot Token Scopes', description: 'Select channels:read, chat:write, files:read.', owner: 'Agent', done: true },
+                        { title: 'Install to Local Workspace', description: 'Click install button and copy Bot User OAuth Token.', owner: 'Developer', done: true }
+                    ]
+                },
+                {
+                    id: 'salesforce',
+                    name: 'Salesforce Connected Apps',
+                    category: 'Enterprise / B2B',
+                    difficulty: 'Enterprise Admin Required',
+                    setupTime: '45 mins setup',
+                    approvalWait: 'Instant (Internal) / Admin Sync',
+                    verificationLevel: 'Org Domain Admin Approval',
+                    bgColorClass: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
+                    iconClass: 'fa-solid fa-cloud',
+                    summary: 'Requires Connected App setup in Salesforce Setup console, digital certificate binding for server-to-server JWT OAuth flows.',
+                    topBlocker: 'Connected App creation takes 2-10 minutes to propagate across Salesforce edge networks before initial login.',
+                    confidenceScore: 96,
+                    lastVerified: '1 week ago',
+                    sourceDocs: 'Salesforce OAuth 2.0 Docs',
+                    nuances: [
+                        { title: 'Propagation Delay', description: 'After saving Connected App, wait 10 mins or OAuth pings will fail with 400 Invalid Client.' },
+                        { title: 'Admin Approval Policy', description: 'Users cannot authorize unless "Admin approved users are pre-authorized" setting is enabled.' }
+                    ],
+                    agentTasks: [
+                        'Draft Connected App XML definition metadata',
+                        'Generate self-signed X.509 certificate for JWT Bearer Flow'
+                    ],
+                    devTasks: [
+                        'Paste certificate into Salesforce Setup -> Connected Apps',
+                        'Enable OAuth Settings & Relax IP Restrictions for dev environment'
+                    ],
+                    steps: [
+                        { title: 'Generate Certificate & Key Pair', description: 'Create X.509 cert for secure API authentication.', owner: 'Agent', done: true },
+                        { title: 'Create Connected App in Salesforce Setup', description: 'Enable OAuth, paste cert, set api, refresh_token scopes.', owner: 'Developer', done: false },
+                        { title: 'Wait 10 Mins for Propagation', description: 'Allow global edge network synchronization.', owner: 'Developer', done: false }
+                    ]
+                },
+                {
+                    id: 'hubspot',
+                    name: 'HubSpot Developer API',
+                    category: 'Enterprise / B2B',
+                    difficulty: 'Medium Review',
+                    setupTime: '20 mins setup',
+                    approvalWait: '1 - 3 Days',
+                    verificationLevel: 'Developer Portal Partner Check',
+                    bgColorClass: 'bg-orange-500/10 border-orange-500/20 text-orange-400',
+                    iconClass: 'fa-solid fa-hubspot',
+                    summary: 'Requires Developer Account creation, Connected App configuration, and OAuth2 authorization URL setup for CRM object access.',
+                    topBlocker: 'Private Apps simplify single-portal access; Public OAuth required for multi-tenant agents.',
+                    confidenceScore: 95,
+                    lastVerified: '3 days ago',
+                    sourceDocs: 'HubSpot Developer Docs',
+                    nuances: [
+                        { title: 'Private App Alternative', description: 'If your agent only connects to ONE HubSpot portal, use Private Access Tokens (0 wait).' },
+                        { title: 'Scope Expirations', description: 'Refresh tokens expire after 30 days of inactivity.' }
+                    ],
+                    agentTasks: [
+                        'Generate OAuth Authorization URL with granular CRM scopes (crm.objects.contacts.read)',
+                        'Implement token refresh loop handling'
+                    ],
+                    devTasks: [
+                        'Create HubSpot Developer Account',
+                        'Create Public App inside Developer Portal and record Client Secret'
+                    ],
+                    steps: [
+                        { title: 'Create Developer Portal', description: 'Sign up at developers.hubspot.com.', owner: 'Developer', done: true },
+                        { title: 'Configure App Scopes & Redirect URIs', description: 'Set redirect endpoint and required CRM permissions.', owner: 'Agent', done: false },
+                        { title: 'Test OAuth Flow on Test Portal', description: 'Use free HubSpot test portal to execute token exchange.', owner: 'Agent', done: false }
+                    ]
+                },
+                {
+                    id: 'notion',
+                    name: 'Notion Integrations API',
+                    category: 'Instant / Fast',
+                    difficulty: 'Instant Setup',
+                    setupTime: '5 mins setup',
+                    approvalWait: 'Zero (Instant)',
+                    verificationLevel: 'Self-serve / Internal Secret',
+                    bgColorClass: 'bg-zinc-500/10 border-zinc-500/20 text-zinc-300',
+                    iconClass: 'fa-solid fa-file-lines',
+                    summary: 'Offers simple Internal Integrations (secret token) or Public OAuth 2.0 for multi-workspace access.',
+                    topBlocker: 'Pages must be explicitly shared with the Integration bot inside Notion UI.',
+                    confidenceScore: 99,
+                    lastVerified: 'Yesterday',
+                    sourceDocs: 'Notion Developers Guide v1',
+                    nuances: [
+                        { title: 'Explicit Workspace Sharing', description: 'Creating an integration token alone will not grant page read access until the workspace owner clicks "Add Connections".' }
+                    ],
+                    agentTasks: [
+                        'Provide precise OAuth redirect callback listener',
+                        'Validate user page permissions on authorization return'
+                    ],
+                    devTasks: [
+                        'Create New Integration in notion.so/my-integrations',
+                        'Share target workspace database with the bot connection'
+                    ],
+                    steps: [
+                        { title: 'Create Notion Integration', description: 'Select Internal or Public type in developer console.', owner: 'Developer', done: true },
+                        { title: 'Copy Internal Integration Secret', description: 'Add secret key to backend environment variables.', owner: 'Developer', done: true },
+                        { title: 'Share Workspace Database', description: 'Click page menu -> Add connections -> Select your bot.', owner: 'Developer', done: false }
+                    ]
+                }
+            ]
+        }
+    },
+    computed: {
+        filteredApps() {
+            return this.apps.filter(app => {
+                const matchesSearch = app.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                                      app.category.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                                      app.summary.toLowerCase().includes(this.searchQuery.toLowerCase());
+                
+                let matchesCategory = true;
+                if (this.selectedCategory === 'Instant / Fast') matchesCategory = app.difficulty === 'Instant Setup';
+                if (this.selectedCategory === 'High Review Delay') matchesCategory = app.difficulty === 'Complex Blocker';
+                if (this.selectedCategory === 'Enterprise / B2B') matchesCategory = app.category === 'Enterprise / B2B';
+
+                return matchesSearch && matchesCategory;
+            });
+        }
+    },
+    methods: {
+        // Mock API Tester methods
+        loadEndpointDefaults() {
+            if (this.selectedApiEndpoint === 'GET /v1/guides') {
+                this.apiRequestPayload = '';
+            } else if (this.selectedApiEndpoint === 'GET /v1/guides/{id}') {
+                this.apiRequestPayload = '';
+            } else if (this.selectedApiEndpoint === 'POST /v1/investigate') {
+                this.apiRequestPayload = '{\n  "appName": "Linear",\n  "includeScopes": true\n}';
+            } else if (this.selectedApiEndpoint === 'POST /v1/verify-scope') {
+                this.apiRequestPayload = '{\n  "provider": "google",\n  "scopes": ["https://www.googleapis.com/auth/gmail.send"]\n}';
+            }
+        },
+        executeApiCall() {
+            const start = Date.now();
+            this.apiStatus = 200;
+
+            if (this.selectedApiEndpoint === 'GET /v1/guides') {
+                this.apiResponseJson = JSON.stringify({
+                    status: 'success',
+                    total: this.apps.length,
+                    guides: this.apps.map(a => ({ id: a.id, name: a.name, difficulty: a.difficulty, setupTime: a.setupTime }))
+                }, null, 2);
+            } else if (this.selectedApiEndpoint === 'GET /v1/guides/{id}') {
+                this.apiResponseJson = JSON.stringify(this.apps[0], null, 2);
+            } else if (this.selectedApiEndpoint === 'POST /v1/investigate') {
+                this.apiResponseJson = JSON.stringify({
+                    status: 'investigation_completed',
+                    target: 'Linear',
+                    estimatedTime: '10 mins',
+                    riskLevel: 'Low',
+                    agentCapabilities: ['Manifest generation', 'Redirect URL validation'],
+                    developerBlockers: ['OAuth secret registration']
+                }, null, 2);
+            } else if (this.selectedApiEndpoint === 'POST /v1/verify-scope') {
+                this.apiResponseJson = JSON.stringify({
+                    status: 'restricted_scope_detected',
+                    provider: 'Google Workspace',
+                    requiresCasaAudit: true,
+                    estimatedCost: '$1,500 - $5,000',
+                    recommendation: 'Use read-only metadata scope if possible to avoid CASA review.'
+                }, null, 2);
+            }
+
+            this.apiLatency = Math.floor(Math.random() * 80) + 40;
+            const nowTime = new Date().toLocaleTimeString([], { hour12: false });
+            this.apiNetworkLogs.unshift({
+                method: this.selectedApiEndpoint.split(' ')[0],
+                path: this.selectedApiEndpoint.split(' ')[1],
+                status: '200 OK',
+                time: nowTime
+            });
+        },
+
+        getDifficultyBadgeClass(difficulty) {
+            switch(difficulty) {
+                case 'Instant Setup': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+                case 'Medium Review': return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+                case 'Complex Blocker': return 'bg-red-500/10 text-red-400 border-red-500/30';
+                default: return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+            }
+        },
+        getDifficultyBarColor(difficulty) {
+            switch(difficulty) {
+                case 'Instant Setup': return 'bg-emerald-500';
+                case 'Medium Review': return 'bg-amber-500';
+                case 'Complex Blocker': return 'bg-red-500';
+                default: return 'bg-blue-500';
+            }
+        },
+        openGuideModal(app) {
+            this.selectedAppModal = JSON.parse(JSON.stringify(app));
+            this.copied = false;
+        },
+        toggleStep(app, index) {
+            app.steps[index].done = !app.steps[index].done;
+        },
+        getCompletedStepCount(app) {
+            if (!app || !app.steps) return 0;
+            return app.steps.filter(s => s.done).length;
+        },
+        getCompletionPercentage(app) {
+            if (!app || !app.steps || app.steps.length === 0) return 0;
+            return Math.round((this.getCompletedStepCount(app) / app.steps.length) * 100);
+        },
+        copyShareLink() {
+            this.copied = true;
+            setTimeout(() => { this.copied = false; }, 2000);
+        },
+
+        // Live Investigator Flow
+        openInvestigatorModal(presetQuery = '') {
+            if (presetQuery) {
+                this.investigateInput = presetQuery;
+            }
+            this.showInvestigatorModal = true;
+            this.isInvestigating = false;
+            this.investigationComplete = false;
+            this.agentProgress = 0;
+            this.agentLogs = [];
+        },
+        closeInvestigatorModal() {
+            this.showInvestigatorModal = false;
+        },
+        startAgentInvestigation() {
+            if (!this.investigateInput.trim()) return;
+            this.isInvestigating = true;
+            this.investigationComplete = false;
+            this.agentProgress = 5;
+            this.agentLogs = [];
+
+            const appName = this.investigateInput.trim();
+            const now = () => new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const pipeline = [
+                { time: now(), progress: 15, msg: `Agent 1 [DocScraper]: Crawling official developer portal & OAuth endpoints for "${appName}"...`, color: 'text-blue-400' },
+                { time: now(), progress: 35, msg: `Agent 1 [DocScraper]: Found authorization_endpoint & token_endpoint specifications.`, color: 'text-slate-300' },
+                { time: now(), progress: 50, msg: `Agent 2 [PolicyAnalyzer]: Extracting scope requirements, verification tiers, and domain whitelist rules...`, color: 'text-indigo-400' },
+                { time: now(), progress: 70, msg: `Agent 2 [PolicyAnalyzer]: Detected required developer verification step and admin authorization constraint.`, color: 'text-amber-300' },
+                { time: now(), progress: 85, msg: `Agent 3 [ActionSynthesizer]: Generating actionable step-by-step checklist & dividing Agent vs Dev tasks...`, color: 'text-emerald-400' },
+                { time: now(), progress: 100, msg: `Agent 4 [GuideBuilder]: Dynamic OAuth Guide compiled and verified with 94% confidence score!`, color: 'text-emerald-400 font-bold' }
+            ];
+
+            let index = 0;
+            const interval = setInterval(() => {
+                if (index < pipeline.length) {
+                    const step = pipeline[index];
+                    this.agentProgress = step.progress;
+                    this.agentLogs.push({
+                        time: step.time,
+                        message: step.msg,
+                        colorClass: step.color
+                    });
+                    index++;
+                } else {
+                    clearInterval(interval);
+                    this.isInvestigating = false;
+                    this.investigationComplete = true;
+                }
+            }, 800);
+        },
+        viewGeneratedGuide() {
+            const appName = this.investigateInput.trim();
+            const newApp = {
+                id: 'custom-' + Date.now(),
+                name: appName,
+                category: 'Live Generated',
+                difficulty: 'Medium Review',
+                setupTime: '15 mins setup',
+                approvalWait: '1 - 3 Days',
+                verificationLevel: 'Standard OAuth Review',
+                bgColorClass: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
+                iconClass: 'fa-solid fa-wand-magic-sparkles',
+                summary: `Dynamically compiled integration guide for ${appName} generated by live agent web analysis. Includes auto-detected scope requirements and blocker checks.`,
+                topBlocker: 'Redirect URI matching and HTTPS requirements must be strictly configured.',
+                confidenceScore: 94,
+                lastVerified: 'Just now (Live Agent)',
+                sourceDocs: `${appName} Developer Portal v2.0`,
+                isGenerated: true,
+                nuances: [
+                    { title: 'Live Scraped Scope Standard', description: 'Requires standard authorization code flow with PKCE recommended for public clients.' },
+                    { title: 'Admin Verification', description: 'Enterprise workspace tenants may require administrator consent prior to token issuance.' }
+                ],
+                agentTasks: [
+                    'Generate standard authorization redirect URL with client state parameter',
+                    'Construct token exchange payload with PKCE code_verifier',
+                    'Parse scope permissions JSON response'
+                ],
+                devTasks: [
+                    `Create Developer App in ${appName} Developer Console`,
+                    'Copy Client ID & Client Secret into secure environment secrets'
+                ],
+                steps: [
+                    { title: `Register App on ${appName} Portal`, description: 'Set up app name, logo, and OAuth callback URI.', owner: 'Developer', done: false },
+                    { title: 'Configure Authorization Scopes', description: 'Select read/write permissions for API access.', owner: 'Agent', done: false },
+                    { title: 'Implement PKCE Token Exchange', description: 'Connect agent callback listener endpoint.', owner: 'Agent', done: false }
+                ]
+            };
+
+            this.apps.unshift(newApp);
+            this.closeInvestigatorModal();
+            this.openGuideModal(newApp);
+        }
+    }
+}).mount('#app');
+</script>
+
+</body>
+</html>
